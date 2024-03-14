@@ -15,4 +15,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// 在 mindmap.js 中
+document.addEventListener('DOMContentLoaded', function() {
+    let tabsTree = JSON.parse(localStorage.getItem('tabsTree') || '{}');
+    let container = document.createElement('div');
 
+    function buildTreeHtml(node) {
+        if (!node || !node.children) return '';
+        let ul = document.createElement('ul');
+        node.children.forEach(child => {
+            let li = document.createElement('li');
+            li.textContent = child.url; // 这里简化处理，只显示URL
+            li.appendChild(buildTreeHtml(child)); // 递归添加子节点
+            ul.appendChild(li);
+        });
+        return ul;
+    }
+
+    container.appendChild(buildTreeHtml(tabsTree));
+    document.body.appendChild(container);
+});
