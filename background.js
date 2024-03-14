@@ -28,8 +28,9 @@ browser.tabs.onCreated.addListener(newTab => {
         }
         tabsTree[parentTabId].children.push({id: newTab.id, url: newTab.url || 'about:newtab', children: []});
         
-        // 更新 tabsTree 后立即保存
-        localStorage.setItem('tabsTree', JSON.stringify(tabsTree));
+        // 更新 tabsTree 后立即保存到 browser.storage.local
+        browser.storage.local.set({tabsTree: tabsTree});
     });
 });
+
 
