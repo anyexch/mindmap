@@ -12,7 +12,24 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             'startTime': midnight.getTime()
         }, function(historyItems) {
             sendResponse({history: historyItems});
-        });
+        });4 
         return true; // 保持消息通道开放
     }
 });
+
+// 在 background.js 中
+let tabsTree = {}; // 用于存储标签树的对象
+
+browser.tabs.onCreated.addListener(newTab => {
+    browser.tabs.query({currentWindow: true, active: true}).then(tabs => {
+        let parentTabId = tabs[0].id;
+        if (!tabsTree[parentTabId]) {
+            tabsTree[parentTabId] = { children: [] };
+        }
+        tabsTree[parentTabId].children.push({id: newTab.id, url: newTab.url || 'about:newtab', children: []});
+        
+        // 更新 tabsTree 后立即保存
+        localStorage.setItem('tabsTree', JSON.stringify(tabsTree));
+    });
+});
+

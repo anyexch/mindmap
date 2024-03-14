@@ -5,7 +5,8 @@
   "description": "Open a new tab to display today's browsing history.",
   "permissions": [
     "history",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "background": {
     "scripts": ["background.js"],
