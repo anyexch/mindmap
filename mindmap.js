@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 在 mindmap.js 中
+/* // 在 mindmap.js 中
 document.addEventListener('DOMContentLoaded', function() {
     browser.storage.local.get(['tabsTree', 'todayHistory']).then(data => {
         let tabsTree = data.tabsTree || {};
@@ -51,3 +51,52 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(list);
     });
 });
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取并展示历史记录
+    browser.storage.local.get('todayHistory').then(data => {
+        const historyItems = data.todayHistory || [];
+        const historyContainer = document.getElementById('history');
+        historyItems.forEach(item => {
+            const div = document.createElement('div');
+            div.textContent = `${item.title} - ${item.url}`;
+            historyContainer.appendChild(div);
+        });
+    });
+
+    // 获取并展示标签树
+    browser.storage.local.get('tabsTree').then(data => {
+        const tabsTree = data.tabsTree || {};
+        const mapContainer = document.getElementById('mindmap');
+        // 假设你有一个函数 buildTreeHtml 来构建树状HTML
+        const treeHtml = buildTreeHtml(tabsTree); // 实现这个函数来构建树状结构的HTML
+        mapContainer.appendChild(treeHtml);
+    });
+});
+
+// 增加递归函数来显示 mindtree
+function buildTreeHtml(node, depth = 0) {
+    if (!node || !node.children) return null;
+    const container = document.createElement('div');
+    node.children.forEach(child => {
+        const div = document.createElement('div');
+        div.textContent = child.url; // 假设每个节点都有一个URL属性
+        div.style.paddingLeft = `${depth * 20}px`; // 根据层级深度应用缩进
+        div.className = 'tree-node'; // 应用样式
+        container.appendChild(div);
+        const childTree = buildTreeHtml(child, depth + 1); // 递归构建子树
+        if (childTree) container.appendChild(childTree);
+    });
+    return container;
+}
+
+// 在DOMContentLoaded事件处理器中使用buildTreeHtml函数
+document.addEventListener('DOMContentLoaded', function() {
+    browser.storage.local.get('tabsTree').then(data => {
+        const tabsTree = data.tabsTree || {};
+        const mapContainer = document.getElementById('mindmap');
+        const treeHtml = buildTreeHtml(tabsTree); // 构建标签树的HTML
+        if (treeHtml) mapContainer.appendChild(treeHtml);
+    });
+});
+
