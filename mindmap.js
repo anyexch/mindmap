@@ -100,3 +100,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取所有存储的TabInfo对象
+    browser.storage.local.get(null).then((items) => {
+        const tabsInfoContainer = document.getElementById('tabsInfoContainer'); // 假设你有一个ID为tabsInfoContainer的元素用于显示标签信息
+        Object.keys(items).forEach((key) => {
+            if (key.startsWith('tabInfo_')) { // 确保只处理TabInfo对象
+                const tabInfoStr = items[key];
+                const tabInfo = JSON.parse(tabInfoStr); // 将字符串反序列化为TabInfo对象
+
+                // 创建一个元素来显示TabInfo信息
+                const tabInfoElement = document.createElement('div');
+                tabInfoElement.textContent = `Tab ID: ${tabInfo.tabId}, URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
+                tabsInfoContainer.appendChild(tabInfoElement);
+            }
+        });
+    }).catch((error) => {
+        console.error('Error fetching tab info:', error);
+    });
+});
+
+
