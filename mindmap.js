@@ -197,58 +197,78 @@ function checkTabExists(tabId) {
 document.addEventListener('DOMContentLoaded', function() {
   browser.storage.local.get(null).then((items) => {
     const tabsInfoContainer = document.getElementById('tabsInfoContainer');
-    tabsInfoContainer.classList.add('tabsInfoContainer');
+    const tabsInfo = {}; // 用于存储转换后的标签页信息
 
-    // 创建一个映射，用于按窗口ID组织标签页信息
-    const windowsMap = {};
-
-    // 遍历所有存储的项，将它们按窗口ID分组
-    Object.keys(items).forEach((key) => {
+    // 将存储中的标签页信息转换为tabsInfo对象
+    Object.keys(items).forEach(key => {
       if (key.startsWith('tabInfo_')) {
-        const tabInfo = JSON.parse(items[key]);
-        // 如果这个窗口ID还没有在映射中，就添加一个新的数组
-        if (!windowsMap[tabInfo.windowId]) {
-          windowsMap[tabInfo.windowId] = [];
-        }
-        // 将标签页信息添加到对应窗口ID的数组中
-        windowsMap[tabInfo.windowId].push(tabInfo);
+        const tabId = key.replace('tabInfo_', '');
+        tabsInfo[tabId] = JSON.parse(items[key]);
       }
     });
 
-    // 现在按窗口ID遍历映射，并显示每个窗口下的标签页信息
-    Object.keys(windowsMap).forEach((windowId) => {
-      const windowElement = document.createElement('div');
-      windowElement.textContent = `Window ID: ${windowId}`;
-      windowElement.classList.add('windowElement');
-      tabsInfoContainer.appendChild(windowElement);
-
-      const listElement = document.createElement('ul');
-      listElement.classList.add('listElement');
-
-      // 对当前窗口的标签页进行排序，确保父标签页在子标签页之前显示
-      const sortedTabs = windowsMap[windowId].sort((a, b) => a.tabId - b.tabId);
-
-      sortedTabs.forEach((tabInfo) => {
-        const tabElement = document.createElement('li');
-        tabElement.classList.add('tabElement');
-        if (tabInfo.parentId) {
-          tabElement.style.paddingLeft = '20px'; // 子标签页缩进
-        }
-        const button = document.createElement('button');
-        button.classList.add('button');
-        button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`; // 显示标题的前30个字符
-        button.onclick = function() {
-          window.open(tabInfo.currentPage.url, '_blank'); // 在新标签页中打开URL
-        };
-        tabElement.appendChild(button);
-        listElement.appendChild(tabElement);
-      });
-      tabsInfoContainer.appendChild(listElement);
-    });
+    // 使用buildTabsHierarchy函数构建标签页层级结构
+    const tabHierarchy = buildTabsHierarchy(tabsInfo);
+    // 使用displayTabHierarchy函数显示标签页层级结构
+    displayTabHierarchy(tabHierarchy, tabsInfoContainer);
   }).catch((error) => {
     console.error('Error fetching tab info:', error);
   });
 });
+
+function buildTabsHierarchy(tabsInfo, parentId = null) {
+  return Object.values(tabsInfo).filter(tab => tab.parentId === parentId).map(tab => ({
+    ...tab,
+    children: buildTabsHierarchy(tabsInfo, tab.tabId)
+  }));
+}
+
+function displayTabHierarchy(tabHierarchy, container, level = 0) {
+  tabHierarchy.forEach(tab => {
+    const tabElement = document.createElement('div');
+    tabElement.style.paddingLeft = `${level * 20}px`; // 控制缩进
+
+    const button = document.createElement('button');
+    // 检查标题是否存在，如果不存在或为空字符串，则使用默认文本"No Title"
+    const title = tab.currentPage && tab.currentPage.title ? tab.currentPage.title.substring(0, 30) + '...' : 'No Title';
+    button.textContent = `Tab ID: ${tab.tabId}, Title: ${title}`;
+
+    // 设置按钮点击事件
+    button.onclick = function() {
+      // 尝试聚焦到该标签页，如果标签页不存在（已关闭），则在新标签页中打开URL
+      browser.tabs.get(tab.tabId).then(() => {
+        browser.tabs.update(tab.tabId, {active: true}).then(() => {
+          if (tab.windowId) {
+            browser.windows.update(tab.windowId, {focused: true});
+          }
+        });
+      }, () => {
+        if (tab.currentPage && tab.currentPage.url) {
+          window.open(tab.currentPage.url, '_blank');
+        }
+      });
+    };
+
+    // 检查Tab ID是否存在，以调整按钮样式
+    browser.tabs.get(tab.tabId).then(() => {
+      button.className = 'active';
+    }, () => {
+      button.className = 'inactive';
+      // 不禁用按钮，允许用户点击打开已关闭的标签页URL
+    });
+
+    tabElement.appendChild(button);
+    container.appendChild(tabElement);
+
+    // 如果当前标签页有子标签页，递归显示子标签页
+    if (tab.children && tab.children.length > 0) {
+      displayTabHierarchy(tab.children, container, level + 1);
+    }
+  });
+}
+
+
+
 
 
 
