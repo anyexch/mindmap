@@ -1,19 +1,19 @@
-document.addEventListener('DOMContentLoaded', function() {
-    browser.storage.local.get(['todayHistory'], function(result) {
-        var historyItems = result.todayHistory || [];
-        var list = document.createElement('ul');
-        list.style.listStyleType = 'none'; // 移除列表项前的标记
-        historyItems.forEach(function(item) {
-            var listItem = document.createElement('li');
-            var button = document.createElement('button');
-            button.innerHTML = `${item.title} - <a href='${item.url}' target='_blank'>${item.url.substring(0, 30)}...</a>`;
-            button.className = 'history-item'; // 添加类名以便CSS样式化
-            listItem.appendChild(button);
-            list.appendChild(listItem);
-        });
-        document.body.appendChild(list);
-    });
-});
+// document.addEventListener('DOMContentLoaded', function() {
+    // browser.storage.local.get(['todayHistory'], function(result) {
+        // var historyItems = result.todayHistory || [];
+        // var list = document.createElement('ul');
+        // list.style.listStyleType = 'none'; // 移除列表项前的标记
+        // historyItems.forEach(function(item) {
+            // var listItem = document.createElement('li');
+            // var button = document.createElement('button');
+            // button.innerHTML = `${item.title} - <a href='${item.url}' target='_blank'>${item.url.substring(0, 30)}...</a>`;
+            // button.className = 'history-item'; // 添加类名以便CSS样式化
+            // listItem.appendChild(button);
+            // list.appendChild(listItem);
+        // });
+        // document.body.appendChild(list);
+    // });
+// });
 
 /* // 在 mindmap.js 中
 document.addEventListener('DOMContentLoaded', function() {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
  */
-document.addEventListener('DOMContentLoaded', function() {
+/* document.addEventListener('DOMContentLoaded', function() {
     // 获取并展示历史记录
     browser.storage.local.get('todayHistory').then(data => {
         const historyItems = data.todayHistory || [];
@@ -72,10 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const treeHtml = buildTreeHtml(tabsTree); // 实现这个函数来构建树状结构的HTML
         mapContainer.appendChild(treeHtml);
     });
-});
+}); */
 
 // 增加递归函数来显示 mindtree
-function buildTreeHtml(node, depth = 0) {
+/* function buildTreeHtml(node, depth = 0) {
     if (!node || !node.children) return null;
     const container = document.createElement('div');
     node.children.forEach(child => {
@@ -88,36 +88,116 @@ function buildTreeHtml(node, depth = 0) {
         if (childTree) container.appendChild(childTree);
     });
     return container;
-}
+} */
 
 // 在DOMContentLoaded事件处理器中使用buildTreeHtml函数
-document.addEventListener('DOMContentLoaded', function() {
-    browser.storage.local.get('tabsTree').then(data => {
-        const tabsTree = data.tabsTree || {};
-        const mapContainer = document.getElementById('mindmap');
-        const treeHtml = buildTreeHtml(tabsTree); // 构建标签树的HTML
-        if (treeHtml) mapContainer.appendChild(treeHtml);
-    });
-});
+// document.addEventListener('DOMContentLoaded', function() {
+    // browser.storage.local.get('tabsTree').then(data => {
+        // const tabsTree = data.tabsTree || {};
+        // const mapContainer = document.getElementById('mindmap');
+        // const treeHtml = buildTreeHtml(tabsTree); // 构建标签树的HTML
+        // if (treeHtml) mapContainer.appendChild(treeHtml);
+    // });
+// });
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 获取所有存储的TabInfo对象
-    browser.storage.local.get(null).then((items) => {
-        const tabsInfoContainer = document.getElementById('tabsInfoContainer'); // 假设你有一个ID为tabsInfoContainer的元素用于显示标签信息
-        Object.keys(items).forEach((key) => {
-            if (key.startsWith('tabInfo_')) { // 确保只处理TabInfo对象
-                const tabInfoStr = items[key];
-                const tabInfo = JSON.parse(tabInfoStr); // 将字符串反序列化为TabInfo对象
+// document.addEventListener('DOMContentLoaded', function() {
+  // browser.storage.local.get(null).then((items) => {
+    // const tabsInfoContainer = document.getElementById('tabsInfoContainer');
+    // Object.keys(items).forEach((key) => {
+      // if (key.startsWith('tabInfo_')) {
+        // const tabInfo = JSON.parse(items[key]);
+        // const tabInfoElement = document.createElement('div');
+        // tabInfoElement.textContent = `Window ID: ${tabInfo.windowId}, Tab ID: ${tabInfo.tabId}, UUID: ${tabInfo.uuid}, URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
+        // tabsInfoContainer.appendChild(tabInfoElement);
+      // }
+    // });
+  // }).catch((error) => {
+    // console.error('Error fetching tab info:', error);
+  // });
+// });
+function checkTabExists(tabId) {
+  return browser.tabs.get(tabId)
+    .then(() => "live")
+    .catch(() => "not live");
+}
 
-                // 创建一个元素来显示TabInfo信息
-                const tabInfoElement = document.createElement('div');
-                tabInfoElement.textContent = `Tab ID: ${tabInfo.tabId}, URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
-                tabsInfoContainer.appendChild(tabInfoElement);
-            }
+
+// document.addEventListener('DOMContentLoaded', function() {
+  // browser.storage.local.get(null).then((items) => {
+    // const tabsInfoContainer = document.getElementById('tabsInfoContainer');
+    // Object.keys(items).forEach((key) => {
+      // if (key.startsWith('tabInfo_')) {
+        // const tabInfo = JSON.parse(items[key]);
+        // const tabInfoElement = document.createElement('div');
+        // tabInfoElement.textContent = `Window ID: ${tabInfo.windowId}, Parent Tab ID: ${tabInfo.parentId}, Tab ID: ${tabInfo.tabId}, URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
+        // tabsInfoContainer.appendChild(tabInfoElement);
+      // }
+    // });
+  // }).catch((error) => {
+    // console.error('Error fetching tab info:', error);
+  // });
+// });
+/* document.addEventListener('DOMContentLoaded', function() {
+  browser.storage.local.get(null).then((items) => {
+    const tabsInfoContainer = document.getElementById('tabsInfoContainer');
+    Object.keys(items).forEach((key) => {
+      if (key.startsWith('tabInfo_')) {
+        const tabInfo = JSON.parse(items[key]);
+        // 检查Tab ID是否存在
+        checkTabExists(tabInfo.tabId).then((status) => {
+          const tabInfoElement = document.createElement('div');
+          tabInfoElement.textContent = `Window ID: ${tabInfo.windowId}, Parent Tab ID: ${tabInfo.parentId}, Tab ID: ${tabInfo.tabId} (${status}), URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
+          tabsInfoContainer.appendChild(tabInfoElement);
         });
-    }).catch((error) => {
-        console.error('Error fetching tab info:', error);
+      }
     });
+  }).catch((error) => {
+    console.error('Error fetching tab info:', error);
+  });
+}); */
+
+document.addEventListener('DOMContentLoaded', function() {
+  browser.storage.local.get(null).then((items) => {
+    // 创建一个映射，用于按窗口ID组织标签页信息
+    const windowsMap = {};
+
+    // 遍历所有存储的项，将它们按窗口ID分组
+    Object.keys(items).forEach((key) => {
+      if (key.startsWith('tabInfo_')) {
+        const tabInfo = JSON.parse(items[key]);
+        // 如果这个窗口ID还没有在映射中，就添加一个新的数组
+        if (!windowsMap[tabInfo.windowId]) {
+          windowsMap[tabInfo.windowId] = [];
+        }
+        // 将标签页信息添加到对应窗口ID的数组中
+        windowsMap[tabInfo.windowId].push(tabInfo);
+      }
+    });
+
+    // 现在按窗口ID遍历映射，并显示每个窗口下的标签页信息
+    const tabsInfoContainer = document.getElementById('tabsInfoContainer');
+    Object.keys(windowsMap).forEach((windowId) => {
+      const windowElement = document.createElement('div');
+      windowElement.textContent = `Window ID: ${windowId}`;
+      tabsInfoContainer.appendChild(windowElement);
+
+      const listElement = document.createElement('ul');
+      windowsMap[windowId].forEach((tabInfo) => {
+        const tabElement = document.createElement('li');
+        tabElement.textContent = `Parent Tab ID: ${tabInfo.parentId}, Tab ID: ${tabInfo.tabId}, URL: ${tabInfo.currentPage.url}, Title: ${tabInfo.currentPage.title}`;
+        listElement.appendChild(tabElement);
+      });
+      tabsInfoContainer.appendChild(listElement);
+    });
+  }).catch((error) => {
+    console.error('Error fetching tab info:', error);
+  });
 });
+
+
+
+
+
+
 
 

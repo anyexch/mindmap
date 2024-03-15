@@ -11,10 +11,6 @@ function generateUUID() {
   });
 }
 
-// 添加页面到标签页历史记录
-TabInfo.prototype.addPageToHistory = function(url, title) {
-  this.history.push({ url: url, title: title });
-};
 
 // 通过标签页ID获取标签页信息
 function getTabInfoByTabId(tabId) {
@@ -30,39 +26,51 @@ function updateTabInfoInStorage(tabId, tabInfo) {
   browser.storage.local.set({[`tab_${tabId}`]: tabInfo});
 }
 
+// class TabInfo {
+  // constructor(windowId, parentId, tabId, uuid) {
+    // this.windowId = windowId;
+    // this.parentId = parentId;
+    // this.tabId = tabId;
+    // this.uuid = uuid; // 存储UUID
+    // this.currentPage = { url: '', title: '' }; // 初始化为空，稍后更新
+    // this.history = [];
+    // this.isClosed = false;
+  // }
+
+  // addPageToHistory(url, title) {
+    // this.history.push({ url: url, title: title });
+  // }
+
+  // markAsClosed() {
+    // this.isClosed = true;
+  // }
+// }
+// 类中去掉方法，简化后的类：
 class TabInfo {
-  constructor(windowId, parentId, tabId, url, title) {
-    this.windowId = windowId; // 窗口ID
-    this.parentId = parentId; // 父标签页ID
-    this.tabId = tabId; // 当前标签页ID
-    this.currentPage = { url: url, title: title }; // 当前页面信息
-    this.history = []; // 页面历史记录列表
-    this.isClosed = false; // 标签页是否已关闭
-  }
-
-  // 添加页面到历史记录
-  addPageToHistory(url, title) {
-    this.history.push({ url: url, title: title });
-  }
-
-  // 标记标签页为已关闭
-  markAsClosed() {
-    this.isClosed = true;
+  constructor(windowId, parentId, tabId, uuid) {
+    this.windowId = windowId;
+    this.parentId = parentId;
+    this.tabId = tabId;
+    this.uuid = uuid; // 存储UUID
+    this.currentPage = { url: '', title: '' }; // 初始化为空，稍后更新
+    this.history = []; // 直接操作这个数组，而不是通过方法
+    this.isClosed = false;
   }
 }
+
 //================定义类tabinfo 这个类
 
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "openMindMap") {
-    chrome.tabs.create({url: "mindmap.html"});
+    browser.tabs.create({url: "mindmap.html"});
   }
 });
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === "getHistory") {
         var midnight = new Date();
         midnight.setHours(0, 0, 0, 0);
-        chrome.history.search({
+        browser.history.search({
             'text': '', // 空字符串返回所有历史记录
             'startTime': midnight.getTime()
         }, function(historyItems) {
@@ -89,15 +97,29 @@ browser.tabs.onCreated.addListener(newTab => {
 });
 
 
-
 // 监听标签页创建事件
+/* browser.tabs.onCreated.addListener(function(tab) {
+  let tabId = tab.id;
+  let windowId = tab.windowId;
+  let uniqueTabId = generateUUID(); // 生成唯一ID
+
+  // 创建TabInfo对象
+  let tabInfo = new TabInfo(windowId, null, tabId, uniqueTabId);
+
+  // 序列化TabInfo对象
+  let tabInfoStr = JSON.stringify(tabInfo);
+
+  // 使用UUID作为键存储TabInfo对象
+  browser.storage.local.set({[`tabInfo_${uniqueTabId}`]: tabInfoStr});
+}); */
+
 browser.tabs.onCreated.addListener(function(tab) {
   let tabId = tab.id; // 获取新创建的标签页ID
   let windowId = tab.windowId; // 获取标签页所属的窗口ID
   let uniqueTabId = generateUUID(); // 为标签页生成一个唯一ID
 
   // 创建TabInfo对象，这里假设新标签页没有父标签页，所以parentId为null
-  let tabInfo = new TabInfo(windowId, null, tabId, tab.url || '', tab.title || '');
+  let tabInfo = new TabInfo(windowId, null, tabId, uniqueTabId);
 
   // 将TabInfo对象序列化为字符串以便存储
   let tabInfoStr = JSON.stringify(tabInfo);
@@ -106,7 +128,52 @@ browser.tabs.onCreated.addListener(function(tab) {
   browser.storage.local.set({[`tabInfo_${tabId}`]: tabInfoStr});
 });
 
+
+
+
 // 监听标签页更新事件
+browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  if (changeInfo.status === 'complete') {
+    // 从storage中获取TabInfo对象
+    browser.storage.local.get(null).then(result => {
+      Object.keys(result).forEach(key => {
+        if (key.startsWith(`tabInfo_`) && key.endsWith(`_${tabId}`)) {
+          let tabInfo = JSON.parse(result[key]);
+          if (tabInfo) {
+            tabInfo.currentPage.url = tab.url;
+            tabInfo.currentPage.title = tab.title;
+            tabInfo.history.push({ url: tab.url, title: tab.title }); // 直接向 history 数组中添加新页面信息
+
+            // 更新存储
+            browser.storage.local.set({[key]: JSON.stringify(tabInfo)});
+          }
+        }
+      });
+    });
+  }
+});
+
+browser.webNavigation.onCreatedNavigationTarget.addListener(details => {
+  let newTabId = details.tabId; // 新标签页的ID
+  let sourceTabId = details.sourceTabId; // 触发新标签页打开的原标签页的ID
+
+  console.log(`New Tab ID: ${newTabId}, Source Tab ID: ${sourceTabId}`); // 输出新标签页ID和源标签页ID
+
+  // 直接创建新标签页的信息，将原标签页ID作为parentId
+  let newTabInfo = new TabInfo('', sourceTabId, newTabId, '');
+
+  // 存储新标签页的信息
+  browser.storage.local.set({[`tabInfo_${newTabId}`]: JSON.stringify(newTabInfo)}).then(() => {
+    console.log(`Stored New Tab Info for Tab ID: ${newTabId}`, newTabInfo); // 输出存储的新标签页信息
+  }).catch(error => console.error(`Error storing new tab info: ${error}`));
+});
+
+
+
+
+
+
+/* // 监听标签页更新事件
 browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   // 检查网页是否加载完成
   if (changeInfo.status === 'complete') {
@@ -127,4 +194,4 @@ browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     });
   }
 });
-
+ */
