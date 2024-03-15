@@ -156,7 +156,7 @@ function checkTabExists(tabId) {
   });
 }); */
 
-document.addEventListener('DOMContentLoaded', function() {
+/* document.addEventListener('DOMContentLoaded', function() {
   browser.storage.local.get(null).then((items) => {
     // 创建一个映射，用于按窗口ID组织标签页信息
     const windowsMap = {};
@@ -192,8 +192,55 @@ document.addEventListener('DOMContentLoaded', function() {
   }).catch((error) => {
     console.error('Error fetching tab info:', error);
   });
-});
+}); */
 
+document.addEventListener('DOMContentLoaded', function() {
+  browser.storage.local.get(null).then((items) => {
+    const tabsInfoContainer = document.getElementById('tabsInfoContainer');
+    tabsInfoContainer.classList.add('tabsInfoContainer');
+
+    // 创建一个映射，用于按窗口ID组织标签页信息
+    const windowsMap = {};
+
+    // 遍历所有存储的项，将它们按窗口ID分组
+    Object.keys(items).forEach((key) => {
+      if (key.startsWith('tabInfo_')) {
+        const tabInfo = JSON.parse(items[key]);
+        // 如果这个窗口ID还没有在映射中，就添加一个新的数组
+        if (!windowsMap[tabInfo.windowId]) {
+          windowsMap[tabInfo.windowId] = [];
+        }
+        // 将标签页信息添加到对应窗口ID的数组中
+        windowsMap[tabInfo.windowId].push(tabInfo);
+      }
+    });
+
+    // 现在按窗口ID遍历映射，并显示每个窗口下的标签页信息
+    Object.keys(windowsMap).forEach((windowId) => {
+      const windowElement = document.createElement('div');
+      windowElement.textContent = `Window ID: ${windowId}`;
+      windowElement.classList.add('windowElement');
+      tabsInfoContainer.appendChild(windowElement);
+
+      const listElement = document.createElement('ul');
+      windowsMap[windowId].forEach((tabInfo) => {
+        const tabElement = document.createElement('li');
+        tabElement.classList.add('tabElement');
+        const button = document.createElement('button');
+        button.classList.add('button');
+        button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`; // 显示标题的前30个字符
+        button.onclick = function() {
+          window.open(tabInfo.currentPage.url, '_blank'); // 在新标签页中打开URL
+        };
+        tabElement.appendChild(button);
+        listElement.appendChild(tabElement);
+      });
+      tabsInfoContainer.appendChild(listElement);
+    });
+  }).catch((error) => {
+    console.error('Error fetching tab info:', error);
+  });
+});
 
 
 

@@ -1,0 +1,23 @@
+/* styles.css */
+.button {
+  padding: 10px;
+  background-color: #4CAF50; /* Green */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
+
+.tabsInfoContainer {
+  margin: 20px;
+}
+
+.tabElement {
+  list-style-type: none; /* 移除列表项的默认标记 */
+  margin-bottom: 10px;
+}
