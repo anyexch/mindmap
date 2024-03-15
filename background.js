@@ -81,7 +81,7 @@ browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 // 在 background.js 中
-let tabsTree = {}; // 用于存储标签树的对象
+/* let tabsTree = {}; // 用于存储标签树的对象
 
 browser.tabs.onCreated.addListener(newTab => {
     browser.tabs.query({currentWindow: true, active: true}).then(tabs => {
@@ -94,7 +94,7 @@ browser.tabs.onCreated.addListener(newTab => {
         // 更新 tabsTree 后立即保存到 browser.storage.local
         browser.storage.local.set({tabsTree: tabsTree});
     });
-});
+}); */
 
 
 // 监听标签页创建事件
@@ -113,20 +113,27 @@ browser.tabs.onCreated.addListener(newTab => {
   browser.storage.local.set({[`tabInfo_${uniqueTabId}`]: tabInfoStr});
 }); */
 
-browser.tabs.onCreated.addListener(function(tab) {
-  let tabId = tab.id; // 获取新创建的标签页ID
-  let windowId = tab.windowId; // 获取标签页所属的窗口ID
-  let uniqueTabId = generateUUID(); // 为标签页生成一个唯一ID
+// 监听标签页创建事件，不设置parentId
+// 监听标签页创建事件，不覆盖已设置parentId的TabInfo对象
+browser.tabs.onCreated.addListener(tab => {
+  let tabId = tab.id;
+  let windowId = tab.windowId;
 
-  // 创建TabInfo对象，这里假设新标签页没有父标签页，所以parentId为null
-  let tabInfo = new TabInfo(windowId, null, tabId, uniqueTabId);
+  // 检查是否已存在TabInfo对象
+  browser.storage.local.get(`tabInfo_${tabId}`).then(result => {
+    if (!result[`tabInfo_${tabId}`]) {
+      // 如果不存在，则创建新的TabInfo对象
+      let uniqueTabId = generateUUID(); // 假设你有这个函数生成唯一ID
+      let tabInfo = new TabInfo(windowId, null, tabId, uniqueTabId, '', '');
 
-  // 将TabInfo对象序列化为字符串以便存储
-  let tabInfoStr = JSON.stringify(tabInfo);
-
-  // 将TabInfo对象存储到browser.storage.local中
-  browser.storage.local.set({[`tabInfo_${tabId}`]: tabInfoStr});
+      // 序列化并存储TabInfo对象
+      browser.storage.local.set({[`tabInfo_${tabId}`]: JSON.stringify(tabInfo)});
+    }
+    // 如果已存在，不进行任何操作，保留已有的TabInfo对象，包括其parentId
+  });
 });
+
+
 
 
 
@@ -153,20 +160,39 @@ browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   }
 });
 
+// 监听由一个页面产生另一个页面的事件，仅在此处设置parentId
 browser.webNavigation.onCreatedNavigationTarget.addListener(details => {
   let newTabId = details.tabId; // 新标签页的ID
   let sourceTabId = details.sourceTabId; // 触发新标签页打开的原标签页的ID
 
   console.log(`New Tab ID: ${newTabId}, Source Tab ID: ${sourceTabId}`); // 输出新标签页ID和源标签页ID
 
-  // 直接创建新标签页的信息，将原标签页ID作为parentId
-  let newTabInfo = new TabInfo('', sourceTabId, newTabId, '');
+  // 尝试获取触发新标签页打开的原标签页的TabInfo
+  browser.tabs.get(sourceTabId).then(sourceTab => {
+    let windowId = sourceTab.windowId; // 获取原标签页所在的窗口ID
 
-  // 存储新标签页的信息
-  browser.storage.local.set({[`tabInfo_${newTabId}`]: JSON.stringify(newTabInfo)}).then(() => {
-    console.log(`Stored New Tab Info for Tab ID: ${newTabId}`, newTabInfo); // 输出存储的新标签页信息
-  }).catch(error => console.error(`Error storing new tab info: ${error}`));
+    // 尝试获取新标签页的TabInfo
+    browser.storage.local.get(`tabInfo_${newTabId}`).then(result => {
+      let newTabInfo;
+      if (result[`tabInfo_${newTabId}`]) {
+        console.log(`TabInfo for new tab ${newTabId} already exists. Updating parentId.`); // 如果新标签页的TabInfo已存在，输出日志
+        newTabInfo = JSON.parse(result[`tabInfo_${newTabId}`]);
+        newTabInfo.parentId = sourceTabId; // 更新parentId
+      } else {
+        console.log(`Creating new TabInfo for tab ${newTabId} with parentId ${sourceTabId}.`); // 如果不存在，输出日志
+        let uuid = generateUUID(); // 生成唯一ID
+        // 创建一个新的TabInfo对象，并设置parentId
+        newTabInfo = new TabInfo(windowId, sourceTabId, newTabId, uuid);
+      }
+
+      // 存储或更新新标签页的TabInfo
+      browser.storage.local.set({[`tabInfo_${newTabId}`]: JSON.stringify(newTabInfo)}).then(() => {
+        console.log(`TabInfo for tab ${newTabId} stored/updated successfully.`); // 成功存储或更新后输出日志
+      });
+    }).catch(error => console.error(`Error processing new navigation target: ${error}`)); // 处理错误
+  }).catch(error => console.error(`Error fetching source tab window ID: ${error}`)); // 处理获取原标签页窗口ID的错误
 });
+
 
 
 
