@@ -21,3 +21,39 @@
   list-style-type: none; /* 移除列表项的默认标记 */
   margin-bottom: 10px;
 }
+
+
+.tabsInfoContainer {
+    font-family: Arial, sans-serif;
+}
+
+.windowElement {
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.tabElement {
+    list-style-type: none;
+}
+
+.childTab {
+    margin-left: 20px; /* 缩进子标签页 */
+}
+
+.tabButton {
+    margin: 5px;
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.tabButton.active {
+    background-color: #007bff;
+}
+
+.tabButton.inactive {
+    background-color: #6c757d;
+}

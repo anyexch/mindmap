@@ -223,9 +223,17 @@ document.addEventListener('DOMContentLoaded', function() {
       tabsInfoContainer.appendChild(windowElement);
 
       const listElement = document.createElement('ul');
-      windowsMap[windowId].forEach((tabInfo) => {
+      listElement.classList.add('listElement');
+
+      // 对当前窗口的标签页进行排序，确保父标签页在子标签页之前显示
+      const sortedTabs = windowsMap[windowId].sort((a, b) => a.tabId - b.tabId);
+
+      sortedTabs.forEach((tabInfo) => {
         const tabElement = document.createElement('li');
         tabElement.classList.add('tabElement');
+        if (tabInfo.parentId) {
+          tabElement.style.paddingLeft = '20px'; // 子标签页缩进
+        }
         const button = document.createElement('button');
         button.classList.add('button');
         button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`; // 显示标题的前30个字符
