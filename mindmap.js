@@ -227,15 +227,15 @@ function displayTabHierarchy(tabHierarchy, container, level = 0) {
   tabHierarchy.forEach(tab => {
     const tabElement = document.createElement('div');
     tabElement.style.paddingLeft = `${level * 20}px`; // 控制缩进
+    tabElement.classList.add('tabElement'); // 应用样式
 
     const button = document.createElement('button');
-    // 检查标题是否存在，如果不存在或为空字符串，则使用默认文本"No Title"
+    button.classList.add('tabButton'); // 应用按钮样式
     const title = tab.currentPage && tab.currentPage.title ? tab.currentPage.title.substring(0, 30) + '...' : 'No Title';
     button.textContent = `Tab ID: ${tab.tabId}, Title: ${title}`;
 
     // 设置按钮点击事件
     button.onclick = function() {
-      // 尝试聚焦到该标签页，如果标签页不存在（已关闭），则在新标签页中打开URL
       browser.tabs.get(tab.tabId).then(() => {
         browser.tabs.update(tab.tabId, {active: true}).then(() => {
           if (tab.windowId) {
@@ -251,10 +251,9 @@ function displayTabHierarchy(tabHierarchy, container, level = 0) {
 
     // 检查Tab ID是否存在，以调整按钮样式
     browser.tabs.get(tab.tabId).then(() => {
-      button.className = 'active';
+      button.classList.add('active');
     }, () => {
-      button.className = 'inactive';
-      // 不禁用按钮，允许用户点击打开已关闭的标签页URL
+      button.classList.add('inactive');
     });
 
     tabElement.appendChild(button);
