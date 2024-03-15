@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    chrome.storage.local.get(['todayHistory'], function(result) {
+    browser.storage.local.get(['todayHistory'], function(result) {
         var historyItems = result.todayHistory || [];
         var list = document.createElement('ul');
         list.style.listStyleType = 'none'; // 移除列表项前的标记

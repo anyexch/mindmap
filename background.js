@@ -1,3 +1,58 @@
+
+// browser.storage.local对于信息量，有没有上限的限制呢？比如哈，我有一个思路，就是当我打开firefox 浏览器时，我给每一个标签一个对应的id就类似于docker 的id。每个标签页面当他诞生时，给予一个不同于其他标签的独立id，同时当一个新标签是由其他标签产生时，会记录一个父标签的id，这样层级关系不就有了吗？一个标签包含两个id 一个父id 一个自身id。比如当我手动建立新标签时那么父id就为空，因为我手动来的麻。这样一个完整的思维导图思路就有了，同时也可以给每一个windows 一个独立的id这样每个标签会有3个id 分别时 windows id ，父id 和自身 id。然后将些信息记录下来，当触发mindmap时，遍历所有id 即可了解到所有的层级结构了。同时还可以这样，当页面刷新时，比如我点击某个搜索页面，点击其中的一条结果，没有产生新标签而是在当前标签中，直接显示了新的结果，那么相当于页面被刷新，这种情况，可以在原有页面id的下面追加一条id，作为子id。总之当页面刷新，或者关闭这两种情况还没有太想好思路。但是我总体的思路就是完整记录下每一条tab 的关系脉络，并记录下页面的标题即地址，构成一个完整的思维导图。存储下来，方便操作。
+    // 页面刷新：对于页面刷新的情况，你可以考虑在原有的标签页对象中添加一个子页面列表，用于记录这个标签页历史上打开过的所有页面。每次页面刷新时，将新页面的信息（如URL、标题等）添加到这个列表中。
+    // 页面关闭：当标签页关闭时，你可以从存储中移除这个标签页的信息，或者标记这个标签页为已关闭，这取决于你想如何处理关闭的标签页数据。
+// 页面刷新，将新的页面url 和标题记录到列表中，页面关闭的话，就给这个标签添加一个标记，那么，完整的思路大概就是，可以建立这样一个标签类，他的结构大概如下：包含windowid，包含父标签id，自身标签id，页面内容列表：自身页面信息url，自身页面标题（历史url，历史标题），是否已经关闭。看下这样是否ok
+//uuid 生成函数
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// 添加页面到标签页历史记录
+TabInfo.prototype.addPageToHistory = function(url, title) {
+  this.history.push({ url: url, title: title });
+};
+
+// 通过标签页ID获取标签页信息
+function getTabInfoByTabId(tabId) {
+  return new Promise((resolve, reject) => {
+    browser.storage.local.get(`tab_${tabId}`, function(result) {
+      resolve(result[`tab_${tabId}`]);
+    });
+  });
+}
+
+// 更新存储中的标签页信息
+function updateTabInfoInStorage(tabId, tabInfo) {
+  browser.storage.local.set({[`tab_${tabId}`]: tabInfo});
+}
+
+class TabInfo {
+  constructor(windowId, parentId, tabId, url, title) {
+    this.windowId = windowId; // 窗口ID
+    this.parentId = parentId; // 父标签页ID
+    this.tabId = tabId; // 当前标签页ID
+    this.currentPage = { url: url, title: title }; // 当前页面信息
+    this.history = []; // 页面历史记录列表
+    this.isClosed = false; // 标签页是否已关闭
+  }
+
+  // 添加页面到历史记录
+  addPageToHistory(url, title) {
+    this.history.push({ url: url, title: title });
+  }
+
+  // 标记标签页为已关闭
+  markAsClosed() {
+    this.isClosed = true;
+  }
+}
+//================定义类tabinfo 这个类
+
+
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "openMindMap") {
     chrome.tabs.create({url: "mindmap.html"});
@@ -33,4 +88,43 @@ browser.tabs.onCreated.addListener(newTab => {
     });
 });
 
+
+
+// 监听标签页创建事件
+browser.tabs.onCreated.addListener(function(tab) {
+  let tabId = tab.id; // 获取新创建的标签页ID
+  let windowId = tab.windowId; // 获取标签页所属的窗口ID
+  let uniqueTabId = generateUUID(); // 为标签页生成一个唯一ID
+
+  // 创建TabInfo对象，这里假设新标签页没有父标签页，所以parentId为null
+  let tabInfo = new TabInfo(windowId, null, tabId, tab.url || '', tab.title || '');
+
+  // 将TabInfo对象序列化为字符串以便存储
+  let tabInfoStr = JSON.stringify(tabInfo);
+
+  // 将TabInfo对象存储到browser.storage.local中
+  browser.storage.local.set({[`tabInfo_${tabId}`]: tabInfoStr});
+});
+
+// 监听标签页更新事件
+browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  // 检查网页是否加载完成
+  if (changeInfo.status === 'complete') {
+    // 从storage中获取TabInfo对象
+    browser.storage.local.get(`tabInfo_${tabId}`, function(result) {
+      let tabInfoStr = result[`tabInfo_${tabId}`];
+      let tabInfo = JSON.parse(tabInfoStr); // 反序列化TabInfo对象
+
+      // 如果存在TabInfo对象，则更新当前页面信息并添加到历史记录
+      if (tabInfo) {
+        tabInfo.currentPage = { url: tab.url, title: tab.title };
+        tabInfo.addPageToHistory(tab.url, tab.title);
+
+        // 重新序列化TabInfo对象并更新storage中的信息
+        tabInfoStr = JSON.stringify(tabInfo);
+        browser.storage.local.set({[`tabInfo_${tabId}`]: tabInfoStr});
+      }
+    });
+  }
+});
 
