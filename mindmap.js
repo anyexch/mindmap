@@ -211,10 +211,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function displayTabBasedOnClass(tabInfo, container) {
-  // 初始化缩进级别为0
   let indentLevel = 0;
 
-  // 如果存在parentId，根据parentId调整缩进级别
   if (tabInfo.parentId) {
     const parentClass = `tab-${tabInfo.parentId}`;
     const parentElement = container.querySelector(`.${parentClass}`);
@@ -226,12 +224,23 @@ function displayTabBasedOnClass(tabInfo, container) {
 
   const tabElement = document.createElement('div');
   tabElement.classList.add(`tab-${tabInfo.tabId}`, 'tabElement');
-  tabElement.dataset.level = indentLevel; // 使用data属性存储层级，方便后续操作
-  tabElement.style.paddingLeft = `${20 * indentLevel}px`; // 根据缩进级别调整左边距
+  tabElement.dataset.level = indentLevel;
+  tabElement.style.paddingLeft = `${20 * indentLevel}px`;
 
   const button = document.createElement('button');
   button.classList.add('tabButton', tabInfo.isClosed ? 'inactive' : 'active');
   button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`;
+  browser.tabs.get(tabInfo.tabId).then(tab => {
+    if (tab.active) {
+      button.classList.add('activeTab');
+    } else {
+      button.classList.add('inactiveTab');
+    }
+  }).catch(error => {
+    console.log(`Error retrieving tab info: ${error}`);
+    // 可能是一个已关闭的标签页
+    button.classList.add('inactiveTab');
+  });
   button.onclick = function() {
     if (!tabInfo.isClosed) {
       browser.tabs.update(tabInfo.tabId, {active: true});
@@ -241,6 +250,39 @@ function displayTabBasedOnClass(tabInfo, container) {
   };
   tabElement.appendChild(button);
 
+  // 创建历史记录的容器
+  const historyContainer = document.createElement('div');
+  historyContainer.classList.add('historyContainer');
+  historyContainer.style.display = 'none'; // 默认不显示
+  historyContainer.style.paddingLeft = `${20}px`; // 添加一点左边距
+
+  // 如果历史记录数量大于1，添加一个折叠按钮来控制显示
+  if (tabInfo.history.length > 1) {
+    const historyToggle = document.createElement('button');
+    historyToggle.textContent = '+';
+    historyToggle.classList.add('tabButton'); // 应用与其他按钮相同的样式
+    historyToggle.onclick = function() {
+      const isExpanded = historyContainer.style.display !== 'none';
+      historyToggle.textContent = isExpanded ? '+' : '-';
+      historyContainer.style.display = isExpanded ? 'none' : 'block';
+    };
+    tabElement.insertBefore(historyToggle, button.nextSibling);
+
+    // 添加历史记录到历史容器中
+	tabInfo.history.forEach((historyItem, index) => {
+	  if (index === tabInfo.history.length - 1) return; // 跳过最新（当前）记录
+	  const historyButton = document.createElement('button');
+	  historyButton.classList.add('tabButton', 'historyButton', 'historyTab'); // 添加新的historyTab类
+	  historyButton.textContent = `History: ${historyItem.title.substring(0, 30)}...`;
+	  historyButton.onclick = function() {
+		window.open(historyItem.url, '_blank');
+	  };
+	  historyContainer.appendChild(historyButton);
+	  historyContainer.appendChild(document.createElement('br')); // 在按钮之间添加换行
+	});
+  }
+
+  tabElement.appendChild(historyContainer);
   container.appendChild(tabElement);
 }
 

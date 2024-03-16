@@ -193,6 +193,32 @@ browser.webNavigation.onCreatedNavigationTarget.addListener(details => {
   }).catch(error => console.error(`Error fetching source tab window ID: ${error}`)); // 处理获取原标签页窗口ID的错误
 });
 
+browser.tabs.onRemoved.addListener(function(tabId, removeInfo) {
+  // tabId 是关闭的标签页的ID
+  // removeInfo 是一个对象，包含有关关闭的标签页的信息
+
+  // 从storage中获取TabInfo对象
+  browser.storage.local.get(null).then(result => {
+    Object.keys(result).forEach(key => {
+      if (key.startsWith(`tabInfo_`) && key.endsWith(`_${tabId}`)) {
+        let tabInfo = JSON.parse(result[key]);
+        if (tabInfo) {
+          // 标签页已关闭，更新isClosed状态
+          tabInfo.isClosed = true;
+
+          // 更新存储
+          browser.storage.local.set({[key]: JSON.stringify(tabInfo)}).then(() => {
+            console.log(`Updated isClosed for tabId: ${tabId}`);
+          }).catch(error => {
+            console.error(`Error updating isClosed for tabId: ${tabId}: ${error}`);
+          });
+        }
+      }
+    });
+  }).catch(error => {
+    console.error(`Error retrieving tabInfo for tabId: ${tabId}: ${error}`);
+  });
+});
 
 
 
