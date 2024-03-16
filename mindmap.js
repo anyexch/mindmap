@@ -15,7 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function displayTabBasedOnClass(tabInfo, container) {
-    
+    if (tabInfo.currentPage.url.startsWith("moz-extension://")) {
+    // 这个URL属于扩展页面，跳过后续处理逻辑
+    console.log("Skipping Mind Map tab");
+	} else {
 	tabInfo.windowIds.forEach((windowId, index) => {
     // 检查或创建对应windowId的窗口容器
     let windowContainer = container.querySelector(`.window-${windowId}`);
@@ -134,7 +137,7 @@ function displayTabBasedOnClass(tabInfo, container) {
   tabElement.appendChild(historyContainer);
   container.appendChild(tabElement);
   parentElement.appendChild(tabElement);
-  });
+  });}
 }
 
 
