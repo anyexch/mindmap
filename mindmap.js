@@ -213,13 +213,17 @@ document.addEventListener('DOMContentLoaded', function() {
 function displayTabBasedOnClass(tabInfo, container) {
   let indentLevel = 0;
 
-  if (tabInfo.parentId) {
-    const parentClass = `tab-${tabInfo.parentId}`;
-    const parentElement = container.querySelector(`.${parentClass}`);
-    if (parentElement) {
-      const parentLevel = parseInt(parentElement.dataset.level, 10);
-      indentLevel = parentLevel + 1;
-    }
+  // 尝试找到父标签页元素
+  const parentClass = tabInfo.parentId ? `tab-${tabInfo.parentId}` : null;
+  let parentElement = parentClass ? container.querySelector(`.${parentClass}`) : null;
+
+  // 如果有父标签页，缩进级别增加
+  if (parentElement) {
+    const parentLevel = parseInt(parentElement.dataset.level, 10);
+    indentLevel = parentLevel + 1;
+  } else {
+    // 如果没有父标签页，则作为顶层标签处理
+    parentElement = container; // 如果没有父元素，直接使用容器作为父元素
   }
 
   const tabElement = document.createElement('div');
@@ -284,6 +288,7 @@ function displayTabBasedOnClass(tabInfo, container) {
 
   tabElement.appendChild(historyContainer);
   container.appendChild(tabElement);
+  parentElement.appendChild(tabElement);
 }
 
 
