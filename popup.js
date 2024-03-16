@@ -8,3 +8,18 @@ document.getElementById('mindmap-btn').addEventListener('click', function() {
         });
     });
 });
+document.getElementById('console-log').addEventListener('click', () => {
+  // 获取所有窗口
+  browser.windows.getAll({populate: true}).then(windows => {
+    windows.forEach(win => {
+      // 打印窗口ID
+      console.log(`Window ID: ${win.id}`);
+      // 打印窗口下所有标签页的ID
+      win.tabs.forEach(tab => {
+        console.log(`Tab ID: ${tab.id}`);
+      });
+    });
+  }).catch(error => {
+    console.error(`Error fetching windows: ${error}`);
+  });
+});
