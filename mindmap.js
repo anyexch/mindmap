@@ -18,12 +18,12 @@ function displayTabBasedOnClass(tabInfo, container) {
   let indentLevel = 0;
 
   // 检查或创建对应windowId的窗口容器
-  let windowContainer = container.querySelector(`.window-${tabInfo.windowId}`);
+  let windowContainer = container.querySelector(`.window-${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`);
   if (!windowContainer) {
     windowContainer = document.createElement('div');
-    windowContainer.classList.add(`window-${tabInfo.windowId}`);
+    windowContainer.classList.add(`window-${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`);
     const windowTitle = document.createElement('div');
-    windowTitle.textContent = `Window ID: ${tabInfo.windowId}`;
+    windowTitle.textContent = `Window ID: ${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`;
     windowTitle.classList.add('windowTitle');
     windowContainer.appendChild(windowTitle);
     container.appendChild(windowContainer);
@@ -64,7 +64,7 @@ function displayTabBasedOnClass(tabInfo, container) {
 	button.onclick = function() {
 	  if (!tabInfo.isClosed) {
 		// 首先激活标签页所在的窗口
-		browser.windows.update(tabInfo.windowId, {focused: true}).then(() => {
+		browser.windows.update(tabInfo.windowIds[tabInfo.windowIds.length - 1], {focused: true}).then(() => {
 		  // 然后聚焦到该标签页
 		  browser.tabs.update(tabInfo.tabId, {active: true});
 		}).catch(error => {

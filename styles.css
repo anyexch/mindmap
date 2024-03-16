@@ -75,3 +75,10 @@
   margin-top: 2px; /* 在按钮上方增加一点间隔 */
   margin-bottom: 2px; /* 在按钮下方增加一点间隔 */
 }
+.historyToggle {
+  font-size: 10px; /* 设置更小的字体大小 */
+  padding: 2px 5px; /* 减少内边距，上下2px，左右5px */
+  line-height: 1; /* 设置行高为1，使按钮高度减小 */
+  margin-right: 5px; /* 在按钮之间添加一点右边距 */
+  cursor: pointer; /* 鼠标悬停时显示指针，更明显地表明这是一个可点击的按钮 */
+}
