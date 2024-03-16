@@ -10,7 +10,8 @@
 	"webRequest",
     "webRequestBlocking",
     "<all_urls>",
-	"webNavigation"
+	"webNavigation",
+	"windows"
   ],
   "background": {
     "scripts": ["background.js"],

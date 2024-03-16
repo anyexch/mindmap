@@ -221,6 +221,15 @@ browser.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 });
 
 
+// 当标签页从一个窗口分离时
+browser.tabs.onDetached.addListener(function(tabId, detachInfo) {
+  console.log(`Tab ${tabId} was detached from window ${detachInfo.oldWindowId}`);
+});
+
+// 当标签页附加到一个窗口时
+browser.tabs.onAttached.addListener(function(tabId, attachInfo) {
+  console.log(`Tab ${tabId} was attached to window ${attachInfo.newWindowId}`);
+});
 
 
 
