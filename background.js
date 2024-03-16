@@ -176,7 +176,26 @@ browser.tabs.onDetached.addListener(function(tabId, detachInfo) {
 });
 
 // 当标签页附加到一个窗口时
+// 监听标签页被附加到新窗口的事件
 browser.tabs.onAttached.addListener(function(tabId, attachInfo) {
-  console.log(`Tab ${tabId} was attached to window ${attachInfo.newWindowId}`);
+  // 将tabId从数字转换为字符串，如果需要的话
+  let stringTabId = tabId.toString();
+
+  // 获取TabInfo对象
+  browser.storage.local.get(`tabInfo_${stringTabId}`).then(result => {
+    if (result[`tabInfo_${stringTabId}`]) {
+      let tabInfo = JSON.parse(result[`tabInfo_${stringTabId}`]);
+
+      // 检查新的windowId是否已经存在于windowIds数组中，如果不存在，则添加
+      if (!tabInfo.windowIds.includes(attachInfo.newWindowId)) {
+        tabInfo.windowIds.push(attachInfo.newWindowId);
+
+        // 更新存储中的TabInfo对象
+        browser.storage.local.set({[`tabInfo_${stringTabId}`]: JSON.stringify(tabInfo)});
+      }
+    }
+  }).catch(error => {
+    console.error(`Error updating TabInfo for tab ${tabId}: ${error}`);
+  });
 });
 
