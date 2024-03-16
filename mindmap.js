@@ -197,73 +197,51 @@ function checkTabExists(tabId) {
 document.addEventListener('DOMContentLoaded', function() {
   browser.storage.local.get(null).then((items) => {
     const tabsInfoContainer = document.getElementById('tabsInfoContainer');
-    const tabsInfo = {}; // 用于存储转换后的标签页信息
 
-    // 将存储中的标签页信息转换为tabsInfo对象
-    Object.keys(items).forEach(key => {
+    // 遍历所有存储的项，直接显示每个标签页信息
+    Object.keys(items).forEach((key) => {
       if (key.startsWith('tabInfo_')) {
-        const tabId = key.replace('tabInfo_', '');
-        tabsInfo[tabId] = JSON.parse(items[key]);
+        const tabInfo = JSON.parse(items[key]);
+        displayTabBasedOnClass(tabInfo, tabsInfoContainer);
       }
     });
-
-    // 使用buildTabsHierarchy函数构建标签页层级结构
-    const tabHierarchy = buildTabsHierarchy(tabsInfo);
-    // 使用displayTabHierarchy函数显示标签页层级结构
-    displayTabHierarchy(tabHierarchy, tabsInfoContainer);
   }).catch((error) => {
     console.error('Error fetching tab info:', error);
   });
 });
 
-function buildTabsHierarchy(tabsInfo, parentId = null) {
-  return Object.values(tabsInfo).filter(tab => tab.parentId === parentId).map(tab => ({
-    ...tab,
-    children: buildTabsHierarchy(tabsInfo, tab.tabId)
-  }));
-}
+function displayTabBasedOnClass(tabInfo, container) {
+  // 初始化缩进级别为0
+  let indentLevel = 0;
 
-function displayTabHierarchy(tabHierarchy, container, level = 0) {
-  tabHierarchy.forEach(tab => {
-    const tabElement = document.createElement('div');
-    tabElement.style.paddingLeft = `${level * 20}px`; // 控制缩进
-    tabElement.classList.add('tabElement'); // 应用样式
-
-    const button = document.createElement('button');
-    button.classList.add('tabButton'); // 应用按钮样式
-    const title = tab.currentPage && tab.currentPage.title ? tab.currentPage.title.substring(0, 30) + '...' : 'No Title';
-    button.textContent = `Tab ID: ${tab.tabId}, Title: ${title}`;
-
-    // 设置按钮点击事件
-    button.onclick = function() {
-      browser.tabs.get(tab.tabId).then(() => {
-        browser.tabs.update(tab.tabId, {active: true}).then(() => {
-          if (tab.windowId) {
-            browser.windows.update(tab.windowId, {focused: true});
-          }
-        });
-      }, () => {
-        if (tab.currentPage && tab.currentPage.url) {
-          window.open(tab.currentPage.url, '_blank');
-        }
-      });
-    };
-
-    // 检查Tab ID是否存在，以调整按钮样式
-    browser.tabs.get(tab.tabId).then(() => {
-      button.classList.add('active');
-    }, () => {
-      button.classList.add('inactive');
-    });
-
-    tabElement.appendChild(button);
-    container.appendChild(tabElement);
-
-    // 如果当前标签页有子标签页，递归显示子标签页
-    if (tab.children && tab.children.length > 0) {
-      displayTabHierarchy(tab.children, container, level + 1);
+  // 如果存在parentId，根据parentId调整缩进级别
+  if (tabInfo.parentId) {
+    const parentClass = `tab-${tabInfo.parentId}`;
+    const parentElement = container.querySelector(`.${parentClass}`);
+    if (parentElement) {
+      const parentLevel = parseInt(parentElement.dataset.level, 10);
+      indentLevel = parentLevel + 1;
     }
-  });
+  }
+
+  const tabElement = document.createElement('div');
+  tabElement.classList.add(`tab-${tabInfo.tabId}`, 'tabElement');
+  tabElement.dataset.level = indentLevel; // 使用data属性存储层级，方便后续操作
+  tabElement.style.paddingLeft = `${20 * indentLevel}px`; // 根据缩进级别调整左边距
+
+  const button = document.createElement('button');
+  button.classList.add('tabButton', tabInfo.isClosed ? 'inactive' : 'active');
+  button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`;
+  button.onclick = function() {
+    if (!tabInfo.isClosed) {
+      browser.tabs.update(tabInfo.tabId, {active: true});
+    } else {
+      window.open(tabInfo.currentPage.url, '_blank');
+    }
+  };
+  tabElement.appendChild(button);
+
+  container.appendChild(tabElement);
 }
 
 
