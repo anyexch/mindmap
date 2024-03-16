@@ -82,3 +82,16 @@
   margin-right: 5px; /* 在按钮之间添加一点右边距 */
   cursor: pointer; /* 鼠标悬停时显示指针，更明显地表明这是一个可点击的按钮 */
 }
+.tabButton-oldWindow {
+  background-color: white; /* 旧窗口的标签页按钮颜色 */
+}
+
+/* CSS */
+.tabButton-oldWindow {
+  text-decoration: line-through; /* 添加删除线 */
+}
+
+.tabButton-currentWindow {
+  background-color: blue; /* 当前窗口的标签页按钮颜色 */
+}
+

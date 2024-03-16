@@ -13,22 +13,24 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Error fetching tab info:', error);
   });
 });
-/* 
+
 function displayTabBasedOnClass(tabInfo, container) {
+    
+	tabInfo.windowIds.forEach((windowId, index) => {
+    // 检查或创建对应windowId的窗口容器
+    let windowContainer = container.querySelector(`.window-${windowId}`);
+    if (!windowContainer) {
+      windowContainer = document.createElement('div');
+      windowContainer.classList.add(`window-${windowId}`);
+      const windowTitle = document.createElement('div');
+      windowTitle.textContent = `Window ID: ${windowId}`;
+      windowTitle.classList.add('windowTitle');
+      windowContainer.appendChild(windowTitle);
+      container.appendChild(windowContainer);
+    }
+
+  
   let indentLevel = 0;
-
-  // 检查或创建对应windowId的窗口容器
-  let windowContainer = container.querySelector(`.window-${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`);
-  if (!windowContainer) {
-    windowContainer = document.createElement('div');
-    windowContainer.classList.add(`window-${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`);
-    const windowTitle = document.createElement('div');
-    windowTitle.textContent = `Window ID: ${tabInfo.windowIds[tabInfo.windowIds.length - 1]}`;
-    windowTitle.classList.add('windowTitle');
-    windowContainer.appendChild(windowTitle);
-    container.appendChild(windowContainer);
-  }
-
   // 尝试找到父标签页元素
   const parentClass = tabInfo.parentId ? `tab-${tabInfo.parentId}` : null;
   let parentElement = parentClass ? windowContainer.querySelector(`.${parentClass}`) : null;
@@ -43,13 +45,32 @@ function displayTabBasedOnClass(tabInfo, container) {
   }
 
   const tabElement = document.createElement('div');
-  tabElement.classList.add(`tab-${tabInfo.tabId}`, 'tabElement');
+  // tabElement.classList.add(`tab-${tabInfo.tabId}`, 'tabElement');
+  
+      tabElement.classList.add(`tab-${tabInfo.tabId}`);
+	console.log("运行到此处？")
+    // 判断当前处理的windowId是否为数组中的最后一个
+    if (index === tabInfo.windowIds.length - 1) {
+      // 最新窗口的标签页，应用正常样式
+      tabElement.classList.add('tabElement');
+    } else {
+      // 之前窗口的标签页，应用其他颜色样式
+      tabElement.classList.add('oldWindowTabElement');
+    }
+	console.log("运行到此处？2")
   tabElement.dataset.level = indentLevel;
   tabElement.style.paddingLeft = `${20 * indentLevel}px`;
 
   const button = document.createElement('button');
   button.classList.add('tabButton', tabInfo.isClosed ? 'inactive' : 'active');
   button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`;
+	if (index === tabInfo.windowIds.length - 1) {
+	// 最新窗口的标签页按钮，应用正常样式
+		button.classList.add('tabButton-currentWindow');
+	} else {
+	// 之前窗口的标签页按钮，应用其他颜色样式
+		button.classList.add('tabButton-oldWindow');
+	}
   browser.tabs.get(tabInfo.tabId).then(tab => {
     if (tab.active) {
       button.classList.add('activeTab');
@@ -113,66 +134,11 @@ function displayTabBasedOnClass(tabInfo, container) {
   tabElement.appendChild(historyContainer);
   container.appendChild(tabElement);
   parentElement.appendChild(tabElement);
-}
-
- */
-
-function displayTabBasedOnClass(tabInfo, container) {
-  // 遍历每个窗口ID
-  tabInfo.windowIds.forEach(windowId => {
-    // 检查或创建对应windowId的窗口容器
-    let windowContainer = container.querySelector(`.window-${windowId}`);
-    if (!windowContainer) {
-      windowContainer = document.createElement('div');
-      windowContainer.classList.add(`window-${windowId}`);
-      const windowTitle = document.createElement('div');
-      windowTitle.textContent = `Window ID: ${windowId}`;
-      windowTitle.classList.add('windowTitle');
-      windowContainer.appendChild(windowTitle);
-      container.appendChild(windowContainer);
-    }
-
-    // 尝试找到父标签页元素
-    const parentClass = tabInfo.parentId ? `tab-${tabInfo.parentId}` : null;
-    let parentElement = parentClass ? windowContainer.querySelector(`.${parentClass}`) : null;
-    let indentLevel = 0; // 重置缩进级别
-
-    // 如果有父标签页，缩进级别增加
-    if (parentElement) {
-      const parentLevel = parseInt(parentElement.dataset.level, 10);
-      indentLevel = parentLevel + 1;
-    } else {
-      // 如果没有父标签页，则作为顶层标签页处理
-      parentElement = windowContainer; // 使用窗口容器作为父元素
-    }
-
-    // 创建标签页元素并设置相应的类和数据
-    const tabElement = document.createElement('div');
-    tabElement.classList.add(`tab-${tabInfo.tabId}`, 'tabElement');
-    tabElement.dataset.level = indentLevel;
-    tabElement.style.paddingLeft = `${20 * indentLevel}px`;
-
-    // 创建和配置标签页的按钮
-    const button = document.createElement('button');
-    button.classList.add('tabButton', tabInfo.isClosed ? 'inactive' : 'active');
-    button.textContent = `Tab ID: ${tabInfo.tabId}, Title: ${tabInfo.currentPage.title.substring(0, 30)}...`;
-    // 省略了与激活标签页相关的逻辑，根据需要添加
-
-    tabElement.appendChild(button);
-
-    // 创建和配置历史记录容器
-    const historyContainer = document.createElement('div');
-    historyContainer.classList.add('historyContainer');
-    historyContainer.style.display = 'none'; // 默认不显示
-    historyContainer.style.paddingLeft = `${20}px`;
-    // 省略了添加历史记录项的逻辑，根据需要添加
-
-    tabElement.appendChild(historyContainer);
-
-    // 最后，将标签页元素添加到相应的父元素中
-    parentElement.appendChild(tabElement);
   });
 }
+
+
+
 
 
 
